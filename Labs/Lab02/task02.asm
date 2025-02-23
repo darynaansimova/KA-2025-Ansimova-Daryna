@@ -1,7 +1,7 @@
 .model small
 .stack 100h
 .data
-    start_number db 34h
+    start_number db '3','$'
     msg db ' $'
 .code
 main    proc
@@ -14,6 +14,11 @@ main    proc
     jb end_program
     cmp al, '9'
     ja end_program
+
+ ; Check if there is more than one character in start_number
+    mov bx, offset start_number
+    cmp byte ptr [bx+1], 24h
+    jnz end_program
 
     mov cl, [start_number]
 
