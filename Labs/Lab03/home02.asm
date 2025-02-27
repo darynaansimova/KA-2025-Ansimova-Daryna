@@ -30,12 +30,13 @@ cmp ax, bx ;(a < b)
 jnb comp2 ;if (a < b) = false then goto comp2
 cmp bx, cx ;(b > c)
 jna comp2 ;if (b > c) = false then goto comp2
+ja comp11
 comp2:
-cmp ax, 10d
+cmp ax, 10d ;a < 10
 jnb comp1_else
-cmp cx, bx
+cmp cx, bx ;c >= b
 jb comp1_else
-cmp ax, bx
+cmp ax, bx ;a <= b
 ja comp1_else
 comp11:
 cmp ax, 40d ;(a != 40)
