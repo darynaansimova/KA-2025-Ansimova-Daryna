@@ -4,41 +4,36 @@
     oneChar db 0
     buffer db 256 dup(?)  ; Allocate 256 bytes for input buffer
     bufIndex dw 0          ; Pointer to the next free position in the buffer
-.code
+.code 
 main PROC
 read_next:
-    mov ah, 3Fh          ; DOS interrupt for reading from file (stdin here)
-    mov bx, 0            ; File handle for stdin
-    mov cx, 1            ; Number of bytes to read (1 character)
-    mov dx, offset oneChar ; Read character into oneChar
-    int 21h              ; Perform interrupt
+    mov ah, 3Fh
+    mov bx, 0h  ; stdin handle
+    mov cx, 1   ; 1 byte to read
+    mov dx, offset oneChar   ; read to ds:dx 
+    int 21h   ;  ax = number of bytes read
 
-    or ax, ax            ; Check if any bytes were read (AX == 0 means EOF)
-    jz end_read          ; If zero, we reached EOF (stop reading)
+    or ax, ax
+    jz end_read ; If zero, we reached EOF (stop reading)
 
-    ; Save the character to the buffer
     mov si, offset bufIndex ; Get the current index in the buffer
     mov di, offset buffer   ; Base address of the buffer
     mov bx, word ptr [si]   ; Load buffer index
     mov al, oneChar         ; Load the character
     mov [di + bx], al       ; Save oneChar into buffer
     inc word ptr [si]       ; Increment buffer index
-
-    ; Check for buffer overflow
     cmp word ptr [si], 256  ; If index >= 256, stop reading
     jae end_read
-
-    jmp read_next           ; Continue reading
+    
+    jmp read_next
 
 end_read:
     ; Add a null terminator to the buffer (if needed for ASCIIZ strings)
     mov si, offset bufIndex ; Get current buffer index
     mov di, offset buffer   ; Base address of the buffer
     mov bx, word ptr [si]
-    mov [di + bx], 0        ; Add null terminator
-
-    ; Exit program
-    mov ax, 4C00h
+    mov byte ptr [di + bx], 0        ; Add null terminator
+    mov ax, 4c00h
     int 21h
 main ENDP
 
