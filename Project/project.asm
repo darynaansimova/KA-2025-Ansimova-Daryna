@@ -68,41 +68,31 @@ end_read:
     int 21h
 main ENDP
 
-StrLength PROC
+;description: returns the length of a string in CX.
+; input: DS:SI points to the string
+; output: CX = length of string
+; note: the string must be terminated with a null character.
+strLength PROC
+str_length:    
     push ax ; Save modified registers
     push di
+    xor cx, cx ; Clear CX to count the length
+    cld ; Clear direction flag for forward string operations
+    mov di, si ; Set DI to point to the start of the string
 
-    xor al, al ; al <- search char (null)
-    mov cx, 0ffffh ; CX <- maximum search depth 154: cld ; Auto-increment di
-    cld
-    repnz scasb ; Scan for al while [di]<>null & cx<>@ 156: not Cx ; Ones complement of cx
-    not cx
-    dec cx ; minus 1 equals string length 158:
+str_length_loop:
+    mov al, [di] ; Load the first character of the string
+    cmp al, 0 ; Check if it's the null terminator
+    je end_strLength ; If it is, jump to the end
+    inc cx ; Increment the length counter
 
+    inc di ; Move to the next character
+    jmp str_length_loop ; Repeat the process
+end_strLength:
+    pop ax ; Restore registers
     pop di ; Restore registers
-    pop ax
-    ret ; Return to caller
-StrLength ENDP
-
-StrCompare PROC
-    ASCNull EQU 0
-    push ax ; Save modified registers
-    push di
-    push si
-    cld ; Auto-increment si
-
-@@10:
-    lodsb  ; al <- [Si], Si <- si + 1
-    scasb ; Compare al and [di]; di <- di + 1
-    jne @@20 ; Exit if non-equal chars found 222: or al, al ; Is al=0? (i.e. at end of s1) 223: jne @@10 ; If no jump, else exit
-    or al, al
-    jne @@10
-@@20:
-    pop si ; Restore registers
-    pop di
-    pop ax
-    ret ; Return flags to caller
-StrCompare ENDP
+    ret ; Return to caller    
+strLength ENDP
 
 StrPos PROC
     push ax ; Save modified registers
