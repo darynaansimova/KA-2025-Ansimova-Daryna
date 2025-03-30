@@ -64,6 +64,11 @@ end_read:
     mov di, offset buffer   ; Base address of the buffer
     mov bx, word ptr [si]
     mov byte ptr [di + bx], 0        ; Add null terminator
+
+    LEA    SI, substring      ; load address of substring to SI.
+    lea di, buffer     ; load address of msg to DI.
+    CALL   strCount ; get the number of occurrences of substring in buffer
+    
     mov ax, 4c00h
     int 21h
 main ENDP
@@ -129,4 +134,42 @@ compare_end:
     pop cx
     ret          ; Return to caller
 StrCompare ENDP
+
+; get number of times a string appears in another string
+; input: ES:DI points to the bigger string, DS:SI points to the smaller string
+; output: CX = number of occurrences
+strCount proc
+    push si
+    push di
+    push bx
+    push ax
+    
+    push di
+    call strLength ; get the length of the smaller string
+    pop di
+
+    mov bx, 0 ; clear bx to count occurrences
+search_loop:
+    call StrCompare ; compare the two strings
+    cmp ax, 1 ; check if they are equal
+    je found_occurrence ; if equal, jump to found_occurrence
+
+    inc di ; move to the next character in the main string
+    cmp byte ptr [di], 0 ; check if we reached the end of the main string
+    jne search_loop ; if not, continue searching
+
+    jmp end_search ; jump to end_search
+found_occurrence:
+    inc bx ; increment the occurrence count
+    add di, cx ; move si to the next character after the found substring
+    cmp byte ptr [di], 0 ; check if we reached the end of the main string
+    jne search_loop ; if not, continue searching
+end_search:
+    mov cx, bx ; set cx to the number of occurrences
+    pop ax
+    pop bx
+    pop di
+    pop si
+    ret    
+strCount ENDP
 end main
