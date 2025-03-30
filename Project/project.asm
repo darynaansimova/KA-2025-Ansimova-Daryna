@@ -5,11 +5,18 @@
     buffer db 256 dup(?)  ; Allocate 256 bytes for input buffer
     bufIndex dw 0          ; Pointer to the next free position in the buffer
     substring db 256 dup(?)  ; Allocate 256 bytes for substring
+    number dw 56906 ; Example number to convert
+
 .code 
 main PROC
     ; Save the PSP segment in ES
     mov ax, ds          ; Save the initial value of DS (PSP segment)
     mov es, ax          ; Store it in ES for later use
+
+    ; Set up DS for the data segment
+    mov ax, @data
+    mov ds, ax
+
     xor ch,ch
     mov cl, es:[80h]   ; at offset 80h length of "args"
 
@@ -68,7 +75,10 @@ end_read:
     LEA    SI, substring      ; load address of substring to SI.
     lea di, buffer     ; load address of msg to DI.
     CALL   strCount ; get the number of occurrences of substring in buffer
-    
+
+    mov ax, number ; Load the number to convert into AX
+    call to_decimal  ; Call the subroutine to print the number
+
     mov ax, 4c00h
     int 21h
 main ENDP
@@ -172,4 +182,47 @@ end_search:
     pop si
     ret    
 strCount ENDP
+
+; Subroutine to print a 16-bit number in decimal
+; Input: AX = number to convert
+; Output: Number printed to standard output
+to_decimal PROC
+    push ax            ; Save AX
+    push bx            ; Save BX
+    push cx            ; Save CX
+    push dx            ; Save DX
+    push si
+    push di
+
+    mov di, 0          ; CX will count the number of digits
+    mov bx, 10         ; Divisor for decimal conversion
+
+convert_loop:
+    xor dx, dx         ; Clear DX for division
+    div bx             ; AX = AX / 10, remainder in DX
+    push dx            ; Push remainder onto stack
+    inc di             ; Increment digit count
+    test ax, ax        ; Check if AX is 0
+    jnz convert_loop   ; If not, continue dividing
+    mov si, 0
+
+write_number:
+    pop dx             ; Get the last digit from the stack
+    add dl, '0'        ; Convert to ASCII
+    mov ah, 02h
+    int 21h         ; Print the character
+    dec di             ; Decrement digit count
+    cmp di, 0         ; Check if all digits are printed
+    jne write_number    ; If there are more digits, continue
+
+    ; Restore registers
+    pop di
+    pop si             ; Restore SI
+    pop dx             ; Restore DX
+    pop cx             ; Restore CX
+    pop bx             ; Restore BX
+    pop ax             ; Restore AX
+    ret
+to_decimal ENDP
+
 end main
