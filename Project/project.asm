@@ -93,4 +93,40 @@ end_strLength:
     pop di ; Restore registers
     ret ; Return to caller    
 strLength ENDP
+
+;description: compares two strings.
+; input: DS:SI points to the first string, ES:DI points to the second string
+; output: AX = 1 if equal, AX = 0 if not equal
+; cx = number of chars to compare
+StrCompare proc
+    push cx
+    push di
+    push si
+
+compare_loop:
+    mov al, [si] ; Load a character from the first string
+    mov ah, [di] ; Load a character from the second string
+    cmp al, ah   ; Compare the characters
+    jne strings_not_equal ; If not equal, jump to not equal
+
+    inc si       ; Move to the next character in the first string
+    inc di       ; Move to the next character in the second string
+    dec cx
+    cmp cx, 0    ; Check if we've compared all characters
+    je strings_equal ; If yes, strings are equal
+    jmp compare_loop ; Repeat the process
+
+strings_not_equal:
+    mov ax, 0    ; Explicitly set AX to 0 (not equal)
+    jmp compare_end
+
+strings_equal:
+    mov ax, 1    ; Set AX to 1 (equal)
+
+compare_end:
+    pop si       ; Restore registers
+    pop di
+    pop cx
+    ret          ; Return to caller
+StrCompare ENDP
 end main
