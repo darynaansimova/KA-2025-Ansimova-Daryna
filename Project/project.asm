@@ -4,8 +4,39 @@
     oneChar db 0
     buffer db 256 dup(?)  ; Allocate 256 bytes for input buffer
     bufIndex dw 0          ; Pointer to the next free position in the buffer
+    substring db 256 dup(?)  ; Allocate 256 bytes for substring
 .code 
 main PROC
+    ; Save the PSP segment in ES
+    mov ax, ds          ; Save the initial value of DS (PSP segment)
+    mov es, ax          ; Store it in ES for later use
+    xor ch,ch
+    mov cl, es:[80h]   ; at offset 80h length of "args"
+
+write_substring:
+    mov si, 81h        ; Set SI to the offset of the first character of "args"
+    mov al, es:[si]     ; Load the first character
+    cmp al, 20h         ; Check if it's a space (ASCII 0x20)
+    jne skip_space      ; If not a space, skip the adjustment
+    inc si              ; Skip the space
+    dec cl              ; Adjust the length to exclude the space
+
+skip_space:
+    test cl, cl
+    jz write_end        ; Exit the loop if CL is zero
+
+write_loop:
+    mov dl, es:[si]     ; Load the current character from the PSP
+    mov substring[bx], dl ; Store the character in the substring
+    inc bx              ; Increment the substring index
+    inc si              ; Move to the next character
+    dec cl              ; Decrement the character count
+    jnz write_loop      ; Repeat the loop if CL is not zero
+
+write_end:
+    mov byte ptr substring[bx], 0 ; Add null terminator to substring
+    LEA SI, substring      ; Load address of substring into SI
+
 read_next:
     mov ah, 3Fh
     mov bx, 0h  ; stdin handle
