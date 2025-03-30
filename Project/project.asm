@@ -93,41 +93,4 @@ end_strLength:
     pop di ; Restore registers
     ret ; Return to caller    
 strLength ENDP
-
-StrPos PROC
-    push ax ; Save modified registers
-    push bx
-    push cx
-    push di
-
-    call StrLength ; Find length of target string 412: mov ax, CX ; Save length(s2) in ax
-    mov ax, cx
-    xchg si, di ; Swap Si and di
-    call StrLength ; Find length of substring
-    mov bx, cx ; Save length(s1) in bx
-    xchg si, di ; Restore si and di
-    sub ax, bx ; ax = last possible index
-    jb @@40 ; Exit if len target < len substring 419: mov dx, Offffh ; Initialize dx to -1
-    mov dx, 0ffffh ; Initialize dx to -1
-    
-@@30:
-    inc dx ; For i = @ TO last possible index 422: mov cl, [byte bx + di] ; save char at s[bx] in cl 423: mov [byte bx + di], ASCNull ; Replace char with null 424: call StrCompare ; Compare si to altered di 425: mov [byte bx + di], cl ; Restore replaced char 426: je @@Q20 ; Jump if match found, dx=index, zf=1 427: inc di ; Else advance target string index 428: cmp dx, ax ; When equal, all positions checked 429: jne @@Q1@ ; Continue search unless not found 430:
-    mov cl, [bx + di]
-    mov [bx + di], ASCNull
-    call StrCompare
-    mov [bx + di], cl
-    je @@40
-    inc di
-    cmp dx, ax
-    jne @@30
-
-    xor cx, cx ; Substring not found. Reset zf = 0 432: inc CX. . 5 to indicate no match
-    inc cx
-@@40:
-    pop di ; Restore registers
-    pop cx
-    pop bx
-    pop ax
-    ret ; Return to caller
-StrPos ENDP
 end main
