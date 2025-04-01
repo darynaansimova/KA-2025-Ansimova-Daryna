@@ -5,7 +5,8 @@
     buffer db 256 dup(?)  ; Allocate 256 bytes for input buffer
     bufIndex dw 0          ; Pointer to the next free position in the buffer
     substring db 256 dup(?)  ; Allocate 256 bytes for substring
-    number dw 56906 ; Example number to convert
+    indexes dw 100 dup(?) ; Array to store indexes of strings
+    occurences dw 100 dup(?) ; Array to store occurrences of strings
 .code 
 main PROC
     ; Save the PSP segment in ES
@@ -57,6 +58,12 @@ read_next:
     mov di, offset buffer   ; Base address of the buffer
     mov bx, word ptr [si]   ; Load buffer index
     mov al, oneChar         ; Load the character
+
+    cmp al, 0dh ; Check if the character is a carriage return (CR)
+    jz end_string ; If it is, stop reading
+    cmp al, 0ah ; Check if the character is a line feed (LF)
+    jz end_string ; If it is, stop reading
+
     mov [di + bx], al       ; Save oneChar into buffer
     inc word ptr [si]       ; Increment buffer index
     cmp word ptr [si], 256  ; If index >= 256, stop reading
@@ -64,6 +71,19 @@ read_next:
     
     jmp read_next
 
+end_string:
+    ; If we reach here, we have a complete string in the buffer
+    ; Add a null terminator to the buffer (if needed for ASCIIZ strings)
+    mov si, offset bufIndex ; Get current buffer index
+    mov di, offset buffer   ; Base address of the buffer
+    mov bx, word ptr [si]
+    mov byte ptr [di + bx], 0
+
+    mov si, offset substring ; Get the current index in the buffer
+    mov di, offset buffer   ; Base address of the buffer
+    call strCount ; Get the number of occurrences of substring in buffer
+
+    jmp read_next ; Continue reading the next character
 end_read:
     ; Add a null terminator to the buffer (if needed for ASCIIZ strings)
     mov si, offset bufIndex ; Get current buffer index
@@ -75,8 +95,6 @@ end_read:
     lea di, buffer     ; load address of msg to DI.
     CALL   strCount ; get the number of occurrences of substring in buffer
 
-    mov ax, number ; Load the number to convert into AX
-    call to_decimal  ; Call the subroutine to print the number
 
     mov ax, 4c00h
     int 21h
