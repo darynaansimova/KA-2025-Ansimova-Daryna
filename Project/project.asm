@@ -6,7 +6,6 @@
     bufIndex dw 0          ; Pointer to the next free position in the buffer
     substring db 256 dup(?)  ; Allocate 256 bytes for substring
     number dw 56906 ; Example number to convert
-
 .code 
 main PROC
     ; Save the PSP segment in ES
@@ -224,5 +223,37 @@ write_number:
     pop ax             ; Restore AX
     ret
 to_decimal ENDP
+
+;description: sort an array of numbers in ascending order.
+;cx = number of elements in the array (    mov cx, word ptr count)
+;di = address of the first element in the array
+sort PROC
+    push ax
+    push cx
+    push si
+    push di
+
+    dec cx  ; count-1
+outerLoop:
+    push cx
+    mov si, di
+innerLoop:
+    mov ax, [si]
+    cmp ax, [si+2]
+    jl nextStep
+    xchg [si+2], ax
+    mov [si], ax
+nextStep:
+    add si, 2
+    loop innerLoop
+    pop cx
+    loop outerLoop
+
+    pop di
+    pop si
+    pop cx
+    pop ax
+    ret
+sort ENDP
 
 end main
