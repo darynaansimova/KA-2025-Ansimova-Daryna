@@ -6,6 +6,7 @@
     bufIndex dw 0          ; Pointer to the next free position in the buffer
     substring db 256 dup(?)  ; Allocate 256 bytes for substring
     indexes dw 100 dup(?) ; Array to store indexes of strings
+    strIndex dw 0         ; Pointer to the next free position in the indexes array
     occurences dw 100 dup(?) ; Array to store occurrences of strings
 .code 
 main PROC
@@ -62,7 +63,7 @@ read_next:
     cmp al, 0dh ; Check if the character is a carriage return (CR)
     jz end_string ; If it is, stop reading
     cmp al, 0ah ; Check if the character is a line feed (LF)
-    jz end_string ; If it is, stop reading
+    jz read_next ; If it is, continue reading
 
     mov [di + bx], al       ; Save oneChar into buffer
     inc word ptr [si]       ; Increment buffer index
@@ -79,9 +80,45 @@ end_string:
     mov bx, word ptr [si]
     mov byte ptr [di + bx], 0
 
+    push si
+    push di
+    push bx
+    push ax
+
     mov si, offset substring ; Get the current index in the buffer
-    mov di, offset buffer   ; Base address of the buffer
-    call strCount ; Get the number of occurrences of substring in buffer
+    mov di, offset buffer    ; Base address of the buffer
+    call strCount            ; Get the number of occurrences of substring in buffer
+
+    mov bx, offset occurences ; Base address of the occurrences array
+    mov ax, word ptr [strIndex] ; Load the current index from strIndex
+    shl ax, 1                 ; Multiply by 2 (word size) to get the correct offset
+    add bx, ax                ; Add the offset to BX
+    mov word ptr [bx], cx     ; Store the count in the occurrences array
+    
+    mov si, offset strIndex ; Get the current index in the buffer
+    mov di, offset indexes  ; Base address of the indexes array
+    mov ax, word ptr [si]   ; Load the current index from strIndex
+    add di, ax              ; Add the offset to DI
+    add di, ax
+    mov word ptr [di], ax   ; Store the index in the indexes array
+    inc word ptr [si] ; Increment the index for the next occurrence
+    
+    pop ax
+    pop bx
+    pop di
+    pop si
+
+    push di
+    push si
+    mov di, offset buffer
+    mov si, bufIndex
+    call clear
+    pop si
+    pop di
+
+    ;clear the buffer for the next read
+    xor bx, bx ; Clear the buffer index
+    mov word ptr [si], 0 ; Reset buffer index to 0
 
     jmp read_next ; Continue reading the next character
 end_read:
@@ -91,10 +128,22 @@ end_read:
     mov bx, word ptr [si]
     mov byte ptr [di + bx], 0        ; Add null terminator
 
-    LEA    SI, substring      ; load address of substring to SI.
-    lea di, buffer     ; load address of msg to DI.
-    CALL   strCount ; get the number of occurrences of substring in buffer
+    mov si, offset substring ; Get the current index in the buffer
+    mov di, offset buffer    ; Base address of the buffer
+    call strCount            ; Get the number of occurrences of substring in buffer
 
+    mov bx, offset occurences ; Base address of the occurrences array
+    mov ax, word ptr [strIndex] ; Load the current index from strIndex
+    shl ax, 1                 ; Multiply by 2 (word size) to get the correct offset
+    add bx, ax                ; Add the offset to BX
+    mov word ptr [bx], cx     ; Store the count in the occurrences array
+    
+    mov si, offset strIndex ; Get the current index in the buffer
+    mov di, offset indexes  ; Base address of the indexes array
+    mov ax, word ptr [si]   ; Load the current index from strIndex
+    add di, ax              ; Add the offset to DI
+    add di, ax
+    mov word ptr [di], ax   ; Store the index in the indexes array
 
     mov ax, 4c00h
     int 21h
@@ -274,4 +323,31 @@ nextStep:
     ret
 sort ENDP
 
+;description: clear the buffer of 256 bytes.
+;input: di = address of the buffer
+;       si = number of bytes to clear (256)
+;output: buffer is cleared (filled with null characters)
+clear PROC
+    push ax
+    push bx
+    push cx
+    push di
+    push si
+
+    mov bx, 0 ; Clear the buffer index
+clear_loop:
+    cmp bx, si ; Check if we've cleared the entire buffer
+    jg clear_end ; If yes, exit the loop    
+    mov byte ptr [di + bx], 0 ; Clear the buffer at the current index
+    inc bx ; Increment the buffer index
+    jmp clear_loop ; Repeat the process
+clear_end:
+    pop si
+    pop di
+    pop cx
+    pop bx
+    pop ax
+    ret
+clear ENDP
+  
 end main
