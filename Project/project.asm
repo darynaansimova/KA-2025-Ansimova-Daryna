@@ -144,6 +144,14 @@ end_read:
     add di, ax              ; Add the offset to DI
     add di, ax
     mov word ptr [di], ax   ; Store the index in the indexes array
+; now we have two arrays: indexes and occurences
+; we need to sort the indexes array and the occurences array
+
+    mov cx, word ptr [strIndex] ; Get the number of elements in the indexes array
+    inc cx ; Increment to include the last element
+    mov di, offset occurences ; Base address of the occurences array
+    mov si, offset indexes ; Base address of the indexes array
+    call sort ; Sort the indexes array
 
     mov ax, 4c00h
     int 21h
@@ -293,16 +301,20 @@ to_decimal ENDP
 
 ;description: sort an array of numbers in ascending order.
 ;cx = number of elements in the array (    mov cx, word ptr count)
-;di = address of the first element in the array
+;di = address of the first element in the first array
+;si = address of the first element in the second array
 sort PROC
     push ax
+    push bx
     push cx
     push si
     push di
 
     dec cx  ; count-1
 outerLoop:
+    push si
     push cx
+    mov bx, si
     mov si, di
 innerLoop:
     mov ax, [si]
@@ -310,15 +322,23 @@ innerLoop:
     jl nextStep
     xchg [si+2], ax
     mov [si], ax
+
+    mov ax, [bx+2]    ; Load the value at [bx+2] into AX
+    mov dx, [bx]      ; Load the value at [bx] into DX
+    mov [bx+2], dx    ; Store the value from DX into [bx+2]
+    mov [bx], ax      ; Store the value from AX into [bx]
 nextStep:
     add si, 2
+    add bx, 2
     loop innerLoop
     pop cx
+    pop si
     loop outerLoop
 
     pop di
     pop si
     pop cx
+    pop bx
     pop ax
     ret
 sort ENDP
