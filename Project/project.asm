@@ -152,7 +152,37 @@ end_read:
     mov di, offset occurences ; Base address of the occurences array
     mov si, offset indexes ; Base address of the indexes array
     call sort ; Sort the indexes array
+; we now have the arrays sorted
+; we need to print the indexes and the occurences arrays
 
+    mov cx, word ptr [strIndex] ; Get the number of elements in the indexes array
+    inc cx ; Increment to include the last element
+print_loop:
+    cmp cx, 0 ; Check if we've printed all elements
+    je end_print ; If yes, exit the loop
+
+    mov ax, word ptr [di] ; Load the occurrence from the occurences array
+    call to_decimal ; Convert the occurrence to decimal and print it
+    mov ah, 02h
+    mov dl, ' ' ; Print a space
+    int 21h
+    mov ax, word ptr [si] ; Load the index from the indexes array
+    call to_decimal ; Convert the index to decimal and print it
+    
+
+    mov ah, 02h
+    mov dl, 0dh ; Print a cr
+    int 21h
+    mov ah, 02h
+    mov dl, 0ah ; Print a lf
+    int 21h
+
+    dec cx ; Decrement the count of elements to print
+    add si, 2 ; Move to the next index in the indexes array
+    add di, 2 ; Move to the next occurrence in the occurences array
+    jmp print_loop ; Repeat the process
+
+end_print:
     mov ax, 4c00h
     int 21h
 main ENDP
