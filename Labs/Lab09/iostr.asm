@@ -75,8 +75,8 @@ display_input:
     mov dl, 0dh           ; Load the address of the CR into DX
     int 21h                 ; Call DOS interrupt to print the CR
     mov ah, 06h                  ; DOS function to display a character
-    mov dl, 0ah           ; Load the address of the CR into DX
-    int 21h                 ; Call DOS interrupt to print the CR
+    mov dl, 0ah           ; Load the address of the LF into DX
+    int 21h                 ; Call DOS interrupt to print the LF
     jmp display_input         ; Repeat for the next line
 
 terminate_program:
